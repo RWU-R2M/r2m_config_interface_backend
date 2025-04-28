@@ -1,0 +1,10 @@
+name: "long-task"
+description: "Run a long-running task in the background"
+script_path: "long_task.py"
+endpoint: "task"
+accepts_input: true
+input_method: "json"
+async: true
+input_schema:
+  task_name: "string"
+  duration: "number"

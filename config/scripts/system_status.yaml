@@ -1,0 +1,13 @@
+name: "system-status"
+description: "Get detailed system status information including CPU temperature and uptime"
+script_path: "system_status.py"
+endpoint: "status"
+accepts_input: false
+async: false
+expected_output:
+  status: "string"
+  cpu_temp: "number"
+  uptime: "string"
+  hostname: "string"
+  platform: "string"
+  cpu_cores: "number"
