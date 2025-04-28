@@ -15,6 +15,7 @@ import json
 import os
 import subprocess
 import platform
+import sys
 
 def get_cpu_temperature():
     """Get CPU temperature if possible (Linux only)"""
@@ -63,7 +64,8 @@ def get_uptime():
 
 def main():
     """Main function that returns JSON data"""
-    print("EXAMPLE SCRIPT: This is a demonstration script, not intended for production use")
+    # Print the warning message to stderr instead of stdout
+    print("EXAMPLE SCRIPT: This is a demonstration script, not intended for production use", file=sys.stderr)
     
     data = {
         "status": "operational",

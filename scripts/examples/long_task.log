@@ -1,0 +1,28 @@
+2025-04-28 09:58:14: WARNING: This is an example script, not intended for production use
+2025-04-28 09:58:14: Starting long-running task: test-task (duration: 5s)
+2025-04-28 09:58:14: Task test-task progress: 0/5
+2025-04-28 09:58:19: Task test-task completed successfully
+2025-04-28 10:03:52: WARNING: This is an example script, not intended for production use
+2025-04-28 10:03:52: Starting long-running task: test-task (duration: 5s)
+2025-04-28 10:03:52: Task test-task progress: 0/5
+2025-04-28 10:04:27: WARNING: This is an example script, not intended for production use
+2025-04-28 10:04:27: Starting long-running task: test-task (duration: 5s)
+2025-04-28 10:04:27: Task test-task progress: 0/5
+2025-04-28 10:04:32: Task test-task completed successfully
+2025-04-28 10:14:53: WARNING: This is an example script, not intended for production use
+2025-04-28 10:14:53: Starting long-running task: test-task (duration: 5s)
+2025-04-28 10:14:53: Task test-task progress: 0/5
+2025-04-28 10:14:58: Task test-task completed successfully
+2025-04-28 10:18:20: WARNING: This is an example script, not intended for production use
+2025-04-28 10:18:20: Starting long-running task: test-task (duration: 5s)
+2025-04-28 10:18:20: Task test-task progress: 0/5
+2025-04-28 10:18:25: Task test-task completed successfully
+2025-04-28 10:21:54: WARNING: This is an example script, not intended for production use
+2025-04-28 10:21:54: Starting long-running task: test-task (duration: 5s)
+2025-04-28 10:21:54: Task test-task progress: 0/5
+2025-04-28 10:21:59: Task test-task completed successfully
+2025-04-28 10:32:36: WARNING: This is an example script, not intended for production use
+2025-04-28 10:32:36: Starting long-running task: test-cleanup (duration: 10s)
+2025-04-28 10:32:36: Task test-cleanup progress: 0/10
+2025-04-28 10:32:41: Task test-cleanup progress: 5/10
+2025-04-28 10:32:46: Task test-cleanup completed successfully

@@ -234,9 +234,17 @@ def validate_script_config(config):
     script_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts'))
     script_path = os.path.join(script_dir, config['script_path'])
     
+    # Check if script exists either directly or in examples directory
     if not os.path.exists(script_path):
-        logger.error(f"Script file not found: {script_path}")
-        return False
+        # If not found, try looking in the examples directory if the path specifies it
+        if config['script_path'].startswith('examples/'):
+            # Script path already includes examples/ prefix, just check if it exists
+            if not os.path.exists(script_path):
+                logger.error(f"Script file not found: {script_path}")
+                return False
+        else:
+            logger.error(f"Script file not found: {script_path}")
+            return False
     
     # If script is synchronous, it should define expected_output fields
     if config.get('async', False) is False and 'expected_output' not in config:
@@ -431,13 +439,23 @@ def execute_script(script_config, input_data=None, timeout=30):
                 "success": False
             }
         
-        return {
-            "script": script_config['name'],
-            "returncode": result.returncode,
-            "output": json_output if json_output else {},
-            "stderr": result.stderr,
-            "success": result.returncode == 0
-        }
+        # Make sure we return a JSON serializable object
+        if result.returncode == 0 and json_output:
+            return {
+                "script": script_config['name'],
+                "returncode": result.returncode,
+                "output": json_output,
+                "stderr": result.stderr,
+                "success": True
+            }
+        else:
+            return {
+                "script": script_config['name'],
+                "returncode": result.returncode,
+                "output": json_output if json_output else {},
+                "stderr": result.stderr,
+                "success": result.returncode == 0
+            }
     
     except subprocess.TimeoutExpired:
         return {

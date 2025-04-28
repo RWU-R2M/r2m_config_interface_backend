@@ -15,31 +15,31 @@ class StatusAPI(Resource):
     """API resource for the status endpoint"""
     def get(self):
         from datetime import datetime
-        return jsonify({
+        return {
             "status": "running",
             "server_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "message": "REST API server is running"
-        })
+        }
 
 class SystemStatsAPI(Resource):
     def get(self):
         """Endpoint to get system statistics"""
         try:
             stats = get_system_stats()
-            return jsonify(stats)
+            return statsS
         except Exception as e:
             logger.error(f"Error in SystemStatsAPI: {str(e)}")
-            return jsonify({"error": str(e)}), 500
+            return {"error": str(e)}, 500
 
 class DockerAPI(Resource):
     def get(self):
         """Endpoint to get Docker container information"""
         try:
             containers = get_docker_containers()
-            return jsonify(containers)
+            return containers
         except Exception as e:
             logger.error(f"Error in DockerAPI: {str(e)}")
-            return jsonify({"error": str(e)}), 500
+            return {"error": str(e)}, 500
 
 class CommandAPI(Resource):
     def post(self):
@@ -54,12 +54,12 @@ class CommandAPI(Resource):
         """
         try:
             if not request.is_json:
-                return jsonify({"error": "Request must be JSON"}), 400
+                return {"error": "Request must be JSON"}, 400
                 
             data = request.get_json()
             
             if not data or 'command' not in data:
-                return jsonify({"error": "command parameter is required"}), 400
+                return {"error": "command parameter is required"}, 400
             
             command_str = data['command']
             requested_timeout = data.get('timeout', 30)
@@ -69,20 +69,20 @@ class CommandAPI(Resource):
                 # Use shlex.split to properly handle quoted arguments
                 command_parts = shlex.split(command_str)
                 if not command_parts:
-                    return jsonify({"error": "Empty command"}), 400
+                    return {"error": "Empty command"}, 400
                 
                 base_command = command_parts[0]
             except Exception as e:
                 logger.error(f"Error parsing command: {str(e)}")
-                return jsonify({"error": f"Invalid command format: {str(e)}"}), 400
+                return {"error": f"Invalid command format: {str(e)}"}, 400
             
             # Check if the command is in the whitelist (if whitelist is configured)
             whitelist = current_app.config.get('COMMAND_WHITELIST', [])
             if whitelist and base_command not in whitelist:
                 logger.warning(f"Blocked execution of non-whitelisted command: {base_command}")
-                return jsonify({
+                return {
                     "error": f"Command '{base_command}' is not allowed. Allowed commands: {', '.join(whitelist)}"
-                }), 403
+                }, 403
             
             # Enforce maximum timeout
             max_timeout = current_app.config.get('COMMAND_MAX_TIMEOUT', 60)
@@ -91,10 +91,10 @@ class CommandAPI(Resource):
             # Execute the command with security checks
             result = execute_command(command_str, timeout)
             
-            return jsonify(result)
+            return result
         except Exception as e:
             logger.error(f"Error in CommandAPI: {str(e)}")
-            return jsonify({"error": str(e)}), 500
+            return {"error": str(e)}, 500
 
 class ScriptsListAPI(Resource):
     """API endpoint to list available custom scripts"""
@@ -102,10 +102,10 @@ class ScriptsListAPI(Resource):
         """Get a list of all available scripts and their configurations"""
         try:
             scripts = list_available_scripts()
-            return jsonify({"scripts": scripts})
+            return {"scripts": scripts}
         except Exception as e:
             logger.error(f"Error in ScriptsListAPI: {str(e)}")
-            return jsonify({"error": str(e)}), 500
+            return {"error": str(e)}, 500
 
 class ScriptExecuteAPI(Resource):
     """API endpoint to execute a custom script by name"""
@@ -124,7 +124,7 @@ class ScriptExecuteAPI(Resource):
             
             # Check if the requested script exists
             if script_name not in script_configs:
-                return jsonify({"error": f"Script '{script_name}' not found"}), 404
+                return {"error": f"Script '{script_name}' not found"}, 404
             
             script_config = script_configs[script_name]
             
@@ -136,7 +136,7 @@ class ScriptExecuteAPI(Resource):
                 if request.is_json:
                     input_data = request.get_json()
                 elif request.content_length and request.content_length > 0:
-                    return jsonify({"error": "Request body must be JSON when providing input to script"}), 400
+                    return {"error": "Request body must be JSON when providing input to script"}, 400
             
             # Get timeout from request or use default
             requested_timeout = request.args.get('timeout', 30, type=int)
@@ -149,22 +149,25 @@ class ScriptExecuteAPI(Resource):
             # Return the result
             if result.get('success', False):
                 # Make sure we return a JSON serializable object
-                serializable_result = dict(result)
-                # If there's a response object that cannot be serialized, convert it to a string
-                if not isinstance(serializable_result, dict):
-                    return jsonify({
-                        "error": "Result is not a valid dictionary",
-                        "success": False
-                    }), 500
-                
-                return jsonify(serializable_result)
+                if 'output' in result and isinstance(result['output'], dict):
+                    return result  # Remove jsonify()
+                else:
+                    return {       # Remove jsonify()
+                        "script": result.get('script', script_name),
+                        "success": result.get('success', False),
+                        "message": result.get('message', ''),
+                        "returncode": result.get('returncode', 0),
+                        "output": result.get('output', {}),
+                        "process_id": result.get('process_id', None),
+                        "async": result.get('async', False)
+                    }
             else:
                 status_code = 500 if 'error' in result else 400
-                return jsonify(result), status_code
+                return result, status_code  # Remove jsonify()
                 
         except Exception as e:
             logger.error(f"Error in ScriptExecuteAPI: {str(e)}")
-            return jsonify({"error": str(e)}), 500
+            return {"error": str(e)}, 500
 
 class ProcessStatusAPI(Resource):
     """API endpoint to get the status of a process"""
@@ -179,13 +182,13 @@ class ProcessStatusAPI(Resource):
             status = get_process_status(process_id)
             
             if status.get('success', False):
-                return jsonify(status)
+                return status
             else:
-                return jsonify(status), 404
+                return status, 404
                 
         except Exception as e:
             logger.error(f"Error in ProcessStatusAPI: {str(e)}")
-            return jsonify({"error": str(e)}), 500
+            return {"error": str(e)}, 500
 
 class ProcessListAPI(Resource):
     """API endpoint to list all tracked processes"""
@@ -193,10 +196,10 @@ class ProcessListAPI(Resource):
         """Get a list of all tracked processes and their status"""
         try:
             processes = list_running_processes()
-            return jsonify({"processes": processes})
+            return {"processes": processes}
         except Exception as e:
             logger.error(f"Error in ProcessListAPI: {str(e)}")
-            return jsonify({"error": str(e)}), 500
+            return {"error": str(e)}, 500
 
 # Define API resources to be registered in main app.py
 api_resources = [

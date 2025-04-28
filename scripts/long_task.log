@@ -47,3 +47,14 @@
 2025-04-28 07:56:11: Task example-task progress: 0/60
 2025-04-28 07:56:16: Task example-task progress: 5/60
 2025-04-28 07:56:21: Task example-task progress: 10/60
+2025-04-28 07:56:26: Task example-task progress: 15/60
+2025-04-28 07:56:31: Task example-task progress: 20/60
+2025-04-28 07:56:36: Task example-task progress: 25/60
+2025-04-28 07:56:41: Task example-task progress: 30/60
+2025-04-28 09:31:30: Starting long-running task: test-task (duration: 5s)
+2025-04-28 09:31:30: Task test-task progress: 0/5
+2025-04-28 09:31:35: Task test-task completed successfully
+2025-04-28 09:33:17: Starting long-running task: test-cleanup (duration: 10s)
+2025-04-28 09:33:17: Task test-cleanup progress: 0/10
+2025-04-28 09:33:22: Task test-cleanup progress: 5/10
+2025-04-28 09:33:27: Task test-cleanup completed successfully

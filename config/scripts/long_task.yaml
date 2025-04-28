@@ -1,6 +1,6 @@
 name: "long-task"
-description: "Run a long-running task in the background"
-script_path: "long_task.py"
+description: "EXAMPLE: Run a long-running task in the background (for demonstration only)"
+script_path: "examples/example_long_task.py"
 endpoint: "task"
 accepts_input: true
 input_method: "json"
