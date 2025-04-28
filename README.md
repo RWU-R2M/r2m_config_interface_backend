@@ -446,12 +446,18 @@ Returns the status of a specific process.
 │   ├── __init__.py     # Package initialization
 │   ├── routes.py       # API route definitions
 │   └── utils.py        # Utility functions for system monitoring
-├── scripts/            # Custom script files
+├── scripts/
+│   ├── README.md       # Documentation for script development
+│   └── examples/       # Example script implementations
+│       ├── example_long_task.py
+│       └── example_system_status.py
 ├── config/
 │   └── scripts/        # Script configuration files
+│       ├── long_task.yaml
+│       └── system_status.yaml
 ├── test/
-│   ├── test_api.py     # Python test script
-│   └── test_api.sh     # Bash test script
+│   ├── test_api_simple.py     # Python test script
+│   └── test_process_management.py  # Process management tests
 └── README.md           # This documentation
 ```
 

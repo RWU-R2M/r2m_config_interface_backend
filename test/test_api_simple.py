@@ -95,10 +95,10 @@ def main():
     test_endpoint("/api/scripts/example-system-status", method="POST", data={},
                  description="Execute Example System Status Script")
     
-    # Test the long-task asynchronous script - Updated to use the new name
+    # Test the long-task asynchronous script
     long_task_data = {"task_name": "test-task", "duration": 5}
-    test_endpoint("/api/scripts/example-long-task", method="POST", data=long_task_data,
-                 description="Execute Example Long Task Script")
+    test_endpoint("/api/scripts/long-task", method="POST", data=long_task_data,
+                 description="Execute Long Task Script")
     
     print_separator("Test Completed")
     print("\nIf all tests show 'Success', your API server is working correctly.")

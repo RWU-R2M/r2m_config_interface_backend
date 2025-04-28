@@ -420,7 +420,7 @@ GET /api/scripts
 {
   "scripts": [
     {
-      "name": "system-status",
+      "name": "example-system-status",
       "description": "Get detailed system status information",
       "endpoint": "status",
       "accepts_input": false,
@@ -434,7 +434,7 @@ GET /api/scripts
     {
       "name": "long-task",
       "description": "Start a system service",
-      "endpoint": "service",
+      "endpoint": "task",
       "accepts_input": true,
       "async": true,
       "input_schema": {

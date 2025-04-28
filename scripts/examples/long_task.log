@@ -26,3 +26,73 @@
 2025-04-28 10:32:36: Task test-cleanup progress: 0/10
 2025-04-28 10:32:41: Task test-cleanup progress: 5/10
 2025-04-28 10:32:46: Task test-cleanup completed successfully
+2025-04-28 10:34:18: WARNING: This is an example script, not intended for production use
+2025-04-28 10:34:18: Starting long-running task: test-cleanup (duration: 10s)
+2025-04-28 10:34:18: Task test-cleanup progress: 0/10
+2025-04-28 10:34:23: Task test-cleanup progress: 5/10
+2025-04-28 10:34:28: Task test-cleanup completed successfully
+2025-04-28 10:35:05: WARNING: This is an example script, not intended for production use
+2025-04-28 10:35:05: Starting long-running task: test-cleanup (duration: 10s)
+2025-04-28 10:35:05: Task test-cleanup progress: 0/10
+2025-04-28 10:35:10: Task test-cleanup progress: 5/10
+2025-04-28 10:35:15: Task test-cleanup completed successfully
+2025-04-28 10:45:27: WARNING: This is an example script, not intended for production use
+2025-04-28 10:45:27: Starting long-running task: test-cleanup (duration: 10s)
+2025-04-28 10:45:27: Task test-cleanup progress: 0/10
+2025-04-28 10:45:32: Task test-cleanup progress: 5/10
+2025-04-28 10:45:37: Task test-cleanup completed successfully
+2025-04-28 10:46:14: WARNING: This is an example script, not intended for production use
+2025-04-28 10:46:14: Starting long-running task: test-cleanup (duration: 10s)
+2025-04-28 10:46:14: Task test-cleanup progress: 0/10
+2025-04-28 10:46:19: Task test-cleanup progress: 5/10
+2025-04-28 10:46:24: Task test-cleanup completed successfully
+2025-04-28 10:46:29: WARNING: This is an example script, not intended for production use
+2025-04-28 10:46:29: Starting long-running task: test-cleanup (duration: 10s)
+2025-04-28 10:46:29: Task test-cleanup progress: 0/10
+2025-04-28 10:46:34: Task test-cleanup progress: 5/10
+2025-04-28 10:46:39: Task test-cleanup completed successfully
+2025-04-28 21:52:28: WARNING: This is an example script, not intended for production use
+2025-04-28 21:52:28: Starting long-running task: test-task (duration: 5s)
+2025-04-28 21:52:28: Task test-task progress: 0/5
+2025-04-28 21:52:33: Task test-task completed successfully
+2025-04-28 21:52:48: WARNING: This is an example script, not intended for production use
+2025-04-28 21:52:48: Starting long-running task: test-cleanup (duration: 10s)
+2025-04-28 21:52:48: Task test-cleanup progress: 0/10
+2025-04-28 21:52:53: Task test-cleanup progress: 5/10
+2025-04-28 21:52:58: Task test-cleanup completed successfully
+2025-04-28 22:55:34: WARNING: This is an example script, not intended for production use
+2025-04-28 22:55:34: Starting long-running task: default-task (duration: 30s)
+2025-04-28 22:55:34: Task default-task progress: 0/30
+2025-04-28 22:55:39: Task default-task progress: 5/30
+2025-04-28 22:55:44: Task default-task progress: 10/30
+2025-04-28 22:55:49: Task default-task progress: 15/30
+2025-04-28 22:55:54: Task default-task progress: 20/30
+2025-04-28 22:55:59: Task default-task progress: 25/30
+2025-04-28 22:56:04: Task default-task completed successfully
+2025-04-28 23:00:56: WARNING: This is an example script, not intended for production use
+2025-04-28 23:00:56: Starting long-running task: default-task (duration: 30s)
+2025-04-28 23:00:56: Task default-task progress: 0/30
+2025-04-28 23:01:01: Task default-task progress: 5/30
+2025-04-28 23:01:06: Task default-task progress: 10/30
+2025-04-28 23:01:11: Task default-task progress: 15/30
+2025-04-28 23:01:16: Task default-task progress: 20/30
+2025-04-28 23:01:21: Task default-task progress: 25/30
+2025-04-28 23:01:26: Task default-task completed successfully
+2025-04-28 23:03:35: WARNING: This is an example script, not intended for production use
+2025-04-28 23:03:35: Starting long-running task: default-task (duration: 30s)
+2025-04-28 23:03:35: Task default-task progress: 0/30
+2025-04-28 23:03:40: Task default-task progress: 5/30
+2025-04-28 23:03:45: Task default-task progress: 10/30
+2025-04-28 23:03:50: Task default-task progress: 15/30
+2025-04-28 23:03:55: Task default-task progress: 20/30
+2025-04-28 23:04:00: Task default-task progress: 25/30
+2025-04-28 23:04:05: Task default-task completed successfully
+2025-04-28 23:06:24: WARNING: This is an example script, not intended for production use
+2025-04-28 23:06:24: Starting long-running task: default-task (duration: 30s)
+2025-04-28 23:06:24: Task default-task progress: 0/30
+2025-04-28 23:06:29: Task default-task progress: 5/30
+2025-04-28 23:06:34: Task default-task progress: 10/30
+2025-04-28 23:06:39: Task default-task progress: 15/30
+2025-04-28 23:06:44: Task default-task progress: 20/30
+2025-04-28 23:06:49: Task default-task progress: 25/30
+2025-04-28 23:06:54: Task default-task completed successfully

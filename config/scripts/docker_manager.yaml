@@ -1,0 +1,14 @@
+name: "docker-manager"
+description: "Perform various operations on Docker containers"
+script_path: "examples/docker_manager.py"
+endpoint: "docker-manage"
+accepts_input: true
+input_method: "json"
+async: false
+input_schema:
+  operation: "string"  # Possible values: list, inspect, stats
+  container_id: "string"  # Optional, for inspect and stats operations
+expected_output:
+  success: "boolean"
+  message: "string"
+  data: "object"

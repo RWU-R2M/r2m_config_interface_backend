@@ -2,9 +2,10 @@ from flask import Blueprint, jsonify, request, current_app
 from flask_restful import Resource
 from app.utils import get_system_stats, get_docker_containers, execute_command
 from app.utils import load_script_configs, execute_script, list_available_scripts
-from app.utils import get_process_status, list_running_processes
+from app.utils import get_process_status, list_running_processes, get_network_stats
 import logging
 import shlex
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +27,20 @@ class SystemStatsAPI(Resource):
         """Endpoint to get system statistics"""
         try:
             stats = get_system_stats()
-            return statsS
+            return stats
         except Exception as e:
             logger.error(f"Error in SystemStatsAPI: {str(e)}")
+            return {"error": str(e)}, 500
+
+class NetworkStatsAPI(Resource):
+    """API endpoint to get network statistics only"""
+    def get(self):
+        """Get network interface statistics"""
+        try:
+            stats = get_network_stats()
+            return {"network": stats}
+        except Exception as e:
+            logger.error(f"Error in NetworkStatsAPI: {str(e)}")
             return {"error": str(e)}, 500
 
 class DockerAPI(Resource):
@@ -201,13 +213,30 @@ class ProcessListAPI(Resource):
             logger.error(f"Error in ProcessListAPI: {str(e)}")
             return {"error": str(e)}, 500
 
-# Define API resources to be registered in main app.py
-api_resources = [
-    (SystemStatsAPI, '/api/system'),
-    (DockerAPI, '/api/docker'),
-    (CommandAPI, '/api/execute'),
-    (ScriptsListAPI, '/api/scripts'),
-    (ScriptExecuteAPI, '/api/scripts/<string:script_name>'),
-    (ProcessStatusAPI, '/api/processes/<string:process_id>'),
-    (ProcessListAPI, '/api/processes')
-]
+# Function to get API resources with env var configuration
+def get_api_resources():
+    """Get API resources with configuration from environment variables"""
+    import os
+    
+    # Determine which endpoints are enabled via environment variables
+    enable_status = os.environ.get('ENABLE_STATUS_ENDPOINT', 'true').lower() == 'true'
+    enable_system = os.environ.get('ENABLE_SYSTEM_ENDPOINT', 'true').lower() == 'true'
+    enable_docker = os.environ.get('ENABLE_DOCKER_ENDPOINT', 'true').lower() == 'true'
+    enable_command = os.environ.get('ENABLE_COMMAND_ENDPOINT', 'true').lower() == 'true'
+    enable_scripts = os.environ.get('ENABLE_SCRIPTS_ENDPOINT', 'true').lower() == 'true'
+    enable_processes = os.environ.get('ENABLE_PROCESSES_ENDPOINT', 'true').lower() == 'true'
+    
+    # Create resources list with enabled flag
+    resources = [
+        {'resource': StatusAPI, 'endpoint': '/', 'enabled': enable_status},
+        {'resource': SystemStatsAPI, 'endpoint': '/api/system', 'enabled': enable_system},
+        {'resource': NetworkStatsAPI, 'endpoint': '/api/system/network', 'enabled': enable_system},
+        {'resource': DockerAPI, 'endpoint': '/api/docker', 'enabled': enable_docker},
+        {'resource': CommandAPI, 'endpoint': '/api/execute', 'enabled': enable_command},
+        {'resource': ScriptsListAPI, 'endpoint': '/api/scripts', 'enabled': enable_scripts},
+        {'resource': ScriptExecuteAPI, 'endpoint': '/api/scripts/<string:script_name>', 'enabled': enable_scripts},
+        {'resource': ProcessStatusAPI, 'endpoint': '/api/processes/<string:process_id>', 'enabled': enable_processes},
+        {'resource': ProcessListAPI, 'endpoint': '/api/processes', 'enabled': enable_processes}
+    ]
+    
+    return resources

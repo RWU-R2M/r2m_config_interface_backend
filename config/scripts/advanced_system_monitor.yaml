@@ -1,0 +1,15 @@
+name: "advanced-system-monitor"
+description: "Get comprehensive system metrics including network, processes, and disk I/O"
+script_path: "examples/advanced_system_monitor.py"
+endpoint: "system-advanced"
+accepts_input: true
+input_method: "json"
+async: false
+input_schema:
+  detail_level: "string"  # basic, standard, or full
+  component: "string"     # cpu, memory, disk, network, processes, or all
+expected_output:
+  success: "boolean"
+  message: "string"
+  timestamp: "number"
+  data: "object"

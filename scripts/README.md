@@ -47,6 +47,59 @@ expected_output: {...}           # Documentation of expected output format
 input_schema: {...}              # Documentation of expected input format
 ```
 
+## Examples
+
+### System Status Script
+
+The example System Status script configuration:
+
+```yaml
+name: "example-system-status"    # Note: This matches the actual configuration
+description: "EXAMPLE: Get detailed system status information"
+script_path: "examples/example_system_status.py"
+endpoint: "status"               # Endpoint is "status"
+accepts_input: false
+async: false
+expected_output: {
+  "status": "string",
+  "cpu_temp": "number",
+  "uptime": "string",
+  "hostname": "string",
+  "platform": "string",
+  "cpu_cores": "number"
+}
+```
+
+API call:
+```bash
+curl -X POST http://localhost:5000/api/scripts/example-system-status
+```
+
+### Long Task Script
+
+The Long Task script configuration:
+
+```yaml
+name: "long-task"                # Note: This matches the actual configuration  
+description: "EXAMPLE: Run a long-running task in the background"
+script_path: "examples/example_long_task.py"
+endpoint: "task"                 # Endpoint is "task"
+accepts_input: true
+input_method: "json"
+async: true
+input_schema: {
+  "task_name": "string",
+  "duration": "number"
+}
+```
+
+API call:
+```bash
+curl -X POST http://localhost:5000/api/scripts/long-task \
+  -H "Content-Type: application/json" \
+  -d '{"task_name": "data-analysis", "duration": 60}'
+```
+
 ## Best Practices
 
 1. Include comprehensive error handling in your scripts
