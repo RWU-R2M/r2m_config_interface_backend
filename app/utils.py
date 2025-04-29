@@ -1,6 +1,8 @@
 import subprocess
 import json
 import logging
+# Use dict.get(key, default) for accessing dictionary keys that might not exist
+# to avoid KeyError exceptions and provide sensible defaults.
 import psutil
 import os
 import glob
@@ -21,37 +23,6 @@ terminal_cwd = os.getcwd() # Initialize with the backend's starting directory
 # Keys are process IDs, values are process objects
 running_processes = {}
 processes_lock = threading.Lock()
-
-# Start a background thread to monitor and clean up completed processes
-def cleanup_completed_processes():
-    """Check for completed processes and clean them up"""
-    while True:
-        to_remove = []
-        with processes_lock:
-            for pid, process_info in running_processes.items():
-                process = process_info['process']
-                # Check if process has completed
-                if process.poll() is not None:
-                    logger.info(f"Process {pid} ({process_info['name']}) completed with return code {process.returncode}")
-                    # Store completion info
-                    process_info['completed'] = True
-                    process_info['returncode'] = process.returncode
-                    process_info['end_time'] = time.time()
-                    # Add to removal list if it's been completed for over an hour
-                    if time.time() - process_info['end_time'] > 3600:  # 1 hour
-                        to_remove.append(pid)
-            
-            # Remove old completed processes
-            for pid in to_remove:
-                logger.info(f"Removing completed process {pid} ({running_processes[pid]['name']}) from tracking")
-                del running_processes[pid]
-                
-        # Sleep between checks to avoid excessive CPU usage
-        time.sleep(5)
-
-# Start the cleanup thread
-cleanup_thread = threading.Thread(target=cleanup_completed_processes, daemon=True)
-cleanup_thread.start()
 
 def get_system_stats():
     """Get detailed system statistics"""
@@ -328,9 +299,10 @@ def validate_script_config(config):
             return False
     
     # If script is synchronous, it should define expected_output fields
+    # Use .get() for optional fields like 'async'
     if config.get('async', False) is False and 'expected_output' not in config:
         logger.warning(f"Synchronous script '{config['name']}' does not define expected_output")
-    
+
     return True
 
 def validate_script_input(input_schema, input_data):
@@ -341,6 +313,7 @@ def validate_script_input(input_schema, input_data):
     if not input_schema:
         return True, None  # No schema, accept anything
 
+    # Use .get() with defaults for potentially missing schema keys
     required = input_schema.get('required', [])
     properties = input_schema.get('properties', {})
 
@@ -363,6 +336,7 @@ def validate_script_input(input_schema, input_data):
     }
     for key, prop in properties.items():
         if key in input_data:
+            # Use .get() for potentially missing 'type' in property definition
             expected_type = prop.get('type')
             if expected_type and expected_type in type_map:
                 if not isinstance(input_data[key], type_map[expected_type]):
@@ -387,10 +361,10 @@ def execute_script(script_config, input_data=None, timeout=30):
     # Determine script type based on file extension
     script_type = os.path.splitext(script_path)[1].lower()
     
-    # Determine if this script accepts input parameters
+    # Determine if this script accepts input parameters (use .get with default False)
     accepts_input = script_config.get('accepts_input', False)
     
-    # Determine if the script should run asynchronously
+    # Determine if the script should run asynchronously (use .get with default False)
     is_async = script_config.get('async', False)
     
     # Prepare environment variables if needed
@@ -408,7 +382,7 @@ def execute_script(script_config, input_data=None, timeout=30):
         
         # Handle input differently based on sync/async and input method
         if accepts_input and input_data:
-            # If using environment variables for input
+            # If using environment variables for input (use .get with default 'json')
             if script_config.get('input_method', 'json') == 'env':
                 for key, value in input_data.items():
                     env[key] = str(value)
@@ -540,7 +514,8 @@ def execute_script(script_config, input_data=None, timeout=30):
         # and should have a result object
         
         output = result.stdout.strip()
-        output_type = script_config.get('output_type', 'json') # Default to json if not specified
+        # Use .get() for optional output_type, defaulting to 'json'
+        output_type = script_config.get('output_type', 'json')
         parsed_output = None
 
         # Try to parse output based on expected type
@@ -585,64 +560,60 @@ def execute_script(script_config, input_data=None, timeout=30):
 
 def get_process_status(process_id):
     """
-    Get the status of a running or completed process
-    
-    Args:
-        process_id: The process ID to check
-        
-    Returns:
-        Dictionary with process status information
+    Get the status of a running or completed process.
+    Checks the actual process state if not already marked completed.
     """
     try:
         pid = int(process_id)
         with processes_lock:
             if pid not in running_processes:
                 return {
-                    "error": f"Process ID {pid} not found",
+                    "error": f"Process ID {pid} not found or already cleaned up",
                     "success": False
                 }
-            
+
             process_info = running_processes[pid]
-            
-            # Check if process is still running
-            if not process_info['completed']:
-                # Poll process to update status
-                returncode = process_info['process'].poll()
+
+            # Check if process is still running and update if it finished
+            if not process_info.get('completed', False):
+                process = process_info['process']
+                returncode = process.poll()
                 if returncode is not None:
+                    logger.info(f"Process {pid} ({process_info['name']}) detected as completed with return code {returncode} during status check.")
                     process_info['completed'] = True
                     process_info['returncode'] = returncode
                     process_info['end_time'] = time.time()
-            
+
             # Format runtime duration
             duration = None
-            if process_info['completed'] and 'end_time' in process_info:
+            if process_info.get('completed') and 'end_time' in process_info:
                 duration = process_info['end_time'] - process_info['start_time']
-            elif not process_info['completed']:
+            elif not process_info.get('completed'):
                 duration = time.time() - process_info['start_time']
-            
+
             # Create response
             status = {
                 "script": process_info['name'],
                 "process_id": pid,
-                "running": not process_info['completed'],
+                "running": not process_info.get('completed', False),
                 "start_time": process_info['start_time'],
                 "duration": round(duration, 2) if duration is not None else None,
                 "success": True
             }
-            
+
             # Add completion info if available
-            if process_info['completed']:
+            if process_info.get('completed'):
                 status.update({
                     "completed": True,
-                    "returncode": process_info['returncode'],
+                    "returncode": process_info.get('returncode'),
                     "end_time": process_info.get('end_time'),
-                    "exit_status": "success" if process_info['returncode'] == 0 else "error"
+                    "exit_status": "success" if process_info.get('returncode') == 0 else "error"
                 })
-            
+
             return status
-            
+
     except Exception as e:
-        logger.error(f"Error getting process status: {str(e)}")
+        logger.error(f"Error getting process status for {process_id}: {str(e)}")
         return {
             "error": str(e),
             "success": False
@@ -650,51 +621,62 @@ def get_process_status(process_id):
 
 def list_running_processes():
     """
-    List all tracked processes and their status
-    
-    Returns:
-        List of process status information
+    List all tracked processes, update their status on demand, and clean up old entries.
     """
     process_list = []
-    
+    to_remove = []
+    now = time.time()
+    cleanup_threshold = 3600 # 1 hour
+
     with processes_lock:
+        # First pass: Update status and build list
         for pid, process_info in running_processes.items():
-            # Check if process is still running
-            if not process_info['completed']:
-                # Poll process to update status
-                returncode = process_info['process'].poll()
+            # Check if process is still running and update if it finished
+            if not process_info.get('completed', False):
+                process = process_info['process']
+                returncode = process.poll()
                 if returncode is not None:
+                    logger.info(f"Process {pid} ({process_info['name']}) detected as completed with return code {returncode} during list check.")
                     process_info['completed'] = True
                     process_info['returncode'] = returncode
                     process_info['end_time'] = time.time()
-            
+
             # Format runtime duration
             duration = None
-            if process_info['completed'] and 'end_time' in process_info:
+            if process_info.get('completed') and 'end_time' in process_info:
                 duration = process_info['end_time'] - process_info['start_time']
-            elif not process_info['completed']:
-                duration = time.time() - process_info['start_time']
-            
-            # Create process status
+                # Check if it's an old completed process eligible for cleanup
+                if now - process_info['end_time'] > cleanup_threshold:
+                    to_remove.append(pid)
+            elif not process_info.get('completed'):
+                duration = now - process_info['start_time']
+
+            # Create process status entry for the response list
             status = {
                 "script": process_info['name'],
                 "process_id": pid,
-                "running": not process_info['completed'],
+                "running": not process_info.get('completed', False),
                 "start_time": process_info['start_time'],
                 "duration": round(duration, 2) if duration is not None else None
             }
-            
+
             # Add completion info if available
-            if process_info['completed']:
+            if process_info.get('completed'):
                 status.update({
                     "completed": True,
-                    "returncode": process_info['returncode'],
+                    "returncode": process_info.get('returncode'),
                     "end_time": process_info.get('end_time'),
-                    "exit_status": "success" if process_info['returncode'] == 0 else "error"
+                    "exit_status": "success" if process_info.get('returncode') == 0 else "error"
                 })
-            
+
             process_list.append(status)
-    
+
+        # Second pass: Remove old completed processes
+        for pid in to_remove:
+            if pid in running_processes: # Check if still exists (should always be true here)
+                logger.info(f"Removing completed process {pid} ({running_processes[pid]['name']}) from tracking after timeout during list check.")
+                del running_processes[pid]
+
     return process_list
 
 def list_available_scripts():
@@ -705,26 +687,29 @@ def list_available_scripts():
         List of script configurations with sensitive data removed
     """
     script_configs = load_script_configs()
-    
+
     # Remove sensitive information from configs
     safe_configs = []
     for name, config in script_configs.items():
         safe_config = {
-            'name': config['name'],
-            'description': config['description'],
-            'endpoint': config['endpoint'],
+            'name': config['name'], # name is required, so [] is okay here
+            'description': config['description'], # description is required
+            'endpoint': config['endpoint'], # endpoint is required
+            # Use .get() for optional fields, providing defaults
             'accepts_input': config.get('accepts_input', False),
             'async': config.get('async', False)
         }
-        
-        # Include input_schema if present
-        if 'input_schema' in config:
-            safe_config['input_schema'] = config['input_schema']
-            
-        # Include expected_output if present
-        if 'expected_output' in config:
-            safe_config['expected_output'] = config['expected_output']
-            
+
+        # Include input_schema if present (use .get)
+        input_schema = config.get('input_schema')
+        if input_schema:
+            safe_config['input_schema'] = input_schema
+
+        # Include expected_output if present (use .get)
+        expected_output = config.get('expected_output')
+        if expected_output:
+            safe_config['expected_output'] = expected_output
+
         safe_configs.append(safe_config)
-    
+
     return safe_configs
