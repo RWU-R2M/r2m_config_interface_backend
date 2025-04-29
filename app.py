@@ -21,6 +21,11 @@ load_dotenv()
 # Create Flask app
 app = Flask(__name__)
 
+# Set application configuration from environment variables
+app.config['COMMAND_WHITELIST'] = os.environ.get('COMMAND_WHITELIST', '').split(',') if os.environ.get('COMMAND_WHITELIST') else []
+app.config['COMMAND_MAX_TIMEOUT'] = int(os.environ.get('COMMAND_MAX_TIMEOUT', 60))
+app.config['SCRIPT_MAX_TIMEOUT'] = int(os.environ.get('SCRIPT_MAX_TIMEOUT', 120))
+
 # Enable CORS with more explicit configuration
 CORS(app, resources={r"/*": {"origins": "*", "allow_headers": "*", "expose_headers": "*", "methods": ["GET", "POST", "OPTIONS"]}})
 
