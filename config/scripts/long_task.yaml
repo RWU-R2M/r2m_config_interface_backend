@@ -6,5 +6,10 @@ accepts_input: true
 input_method: "json"
 async: true
 input_schema:
-  task_name: "string"
-  duration: "number"
+  type: object
+  properties:
+    duration:
+      type: number
+      description: Duration of the task in seconds
+  required:
+    - duration

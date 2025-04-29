@@ -170,7 +170,7 @@ def test_process_management():
     results.append(success)
     
     # 2. Start a long-running task
-    task_data = {"task_name": "test-task", "duration": 3}
+    task_data = {"duration": 3}  # Only include valid parameter(s) as per input_schema
     success, task_result = test_endpoint(
         "/api/scripts/long-task", 
         method="POST", 
@@ -285,9 +285,6 @@ def test_docker_functionality():
     if success and containers:
         container_count = len(containers.get("containers", []))
         log(f"Found {container_count} Docker containers", "INFO")
-        
-        # Skip container-specific tests since the API seems to return 405 for those endpoints
-        log("Skipping container-specific tests - API returns 405 Method Not Allowed", "INFO", Colors.YELLOW)
     
     return all(results)
 
@@ -361,9 +358,16 @@ def test_error_handling():
     )
     results.append(success)
     
-    # 4. The API appears to accept invalid parameters, so we'll skip this test
-    log("API accepts invalid parameters to scripts - skipping parameter validation test", "INFO", Colors.YELLOW)
-    results.append(True)  # Mark as passed since we're skipping
+    # 4. Test invalid script parameters
+    invalid_data = {"invalid_param": "value"}
+    success, _ = test_endpoint(
+        "/api/scripts/long-task", 
+        method="POST", 
+        data=invalid_data, 
+        description="Invalid Script Parameter Test", 
+        expected_status=400
+    )
+    results.append(success)
     
     # 5. Test empty command
     success, _ = test_endpoint(

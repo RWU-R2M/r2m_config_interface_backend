@@ -333,6 +333,42 @@ def validate_script_config(config):
     
     return True
 
+def validate_script_input(input_schema, input_data):
+    """
+    Validate input_data against the input_schema from the script config.
+    Returns (True, None) if valid, (False, error_message) if invalid.
+    """
+    if not input_schema:
+        return True, None  # No schema, accept anything
+
+    required = input_schema.get('required', [])
+    properties = input_schema.get('properties', {})
+
+    # Check for missing required fields
+    for key in required:
+        if key not in input_data:
+            return False, f"Missing required parameter: '{key}'"
+
+    # Check for extra fields
+    for key in input_data:
+        if key not in properties:
+            return False, f"Unexpected parameter: '{key}'"
+
+    # Check types
+    type_map = {
+        'string': str,
+        'integer': int,
+        'number': (int, float),
+        'boolean': bool
+    }
+    for key, prop in properties.items():
+        if key in input_data:
+            expected_type = prop.get('type')
+            if expected_type and expected_type in type_map:
+                if not isinstance(input_data[key], type_map[expected_type]):
+                    return False, f"Parameter '{key}' should be of type '{expected_type}'"
+    return True, None
+
 def execute_script(script_config, input_data=None, timeout=30):
     """
     Execute a script based on its configuration

@@ -3,8 +3,8 @@ from flask_restful import Resource
 from app.utils import get_system_stats, get_docker_containers, execute_command
 from app.utils import load_script_configs, execute_script, list_available_scripts
 from app.utils import get_process_status, list_running_processes, get_network_stats
-# Import the new Docker control functions
 from app.utils import start_docker_container, stop_docker_container, restart_docker_container
+from app.utils import validate_script_input  # <-- import the new function
 import logging
 import shlex
 import os
@@ -175,22 +175,23 @@ class ScriptExecuteAPI(Resource):
         try:
             # Load script configurations
             script_configs = load_script_configs()
-            
             # Check if the requested script exists
             if script_name not in script_configs:
                 return {"error": f"Script '{script_name}' not found"}, 404
-            
             script_config = script_configs[script_name]
-            
             # Check if the script accepts input and if we received any
             accepts_input = script_config.get('accepts_input', False)
             input_data = None
-            
             if accepts_input:
                 if request.is_json:
                     input_data = request.get_json()
                 elif request.content_length and request.content_length > 0:
                     return {"error": "Request body must be JSON when providing input to script"}, 400
+                # --- Parameter validation ---
+                input_schema = script_config.get('input_schema')
+                valid, error_msg = validate_script_input(input_schema, input_data or {})
+                if not valid:
+                    return {"error": error_msg}, 400
             
             # Get timeout from request or use default
             requested_timeout = request.args.get('timeout', 30, type=int)
