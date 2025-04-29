@@ -6,8 +6,18 @@ accepts_input: true
 input_method: "json"
 async: false
 input_schema:
-  operation: "string"  # Possible values: list, inspect, stats
-  container_id: "string"  # Optional, for inspect and stats operations
+  type: object
+  properties:
+    operation:
+      type: string
+      description: "Operation: list, inspect, stats"
+      default: "list"
+    container_id:
+      type: string
+      description: "Optional container ID for inspect/stats"
+  # Example: Make 'operation' required
+  # required:
+  #   - operation
 expected_output:
   success: "boolean"
   message: "string"

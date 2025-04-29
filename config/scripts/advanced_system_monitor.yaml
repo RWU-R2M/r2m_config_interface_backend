@@ -6,8 +6,19 @@ accepts_input: true
 input_method: "json"
 async: false
 input_schema:
-  detail_level: "string"  # basic, standard, or full
-  component: "string"     # cpu, memory, disk, network, processes, or all
+  type: object  # Define as object
+  properties:   # Use properties key
+    detail_level:
+      type: string
+      description: "Detail level: basic, standard, or full"
+      default: "standard" # Optional: Add a default value
+    component:
+      type: string
+      description: "Component: cpu, memory, disk, network, processes, or all"
+      default: "all" # Optional: Add a default value
+  # Optional: Define required fields if necessary
+  # required:
+  #   - detail_level
 expected_output:
   success: "boolean"
   message: "string"
