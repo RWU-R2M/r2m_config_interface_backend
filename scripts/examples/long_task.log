@@ -162,3 +162,11 @@
 2025-04-29 21:12:58: Starting long-running task: default-task (duration: 3s)
 2025-04-29 21:12:58: Task default-task progress: 0/3
 2025-04-29 21:13:01: Task default-task completed successfully
+2025-04-29 21:22:13: WARNING: This is an example script, not intended for production use
+2025-04-29 21:22:13: Starting long-running task: default-task (duration: 3s)
+2025-04-29 21:22:13: Task default-task progress: 0/3
+2025-04-29 21:22:16: Task default-task completed successfully
+2025-04-29 21:25:32: WARNING: This is an example script, not intended for production use
+2025-04-29 21:25:32: Starting long-running task: default-task (duration: 3s)
+2025-04-29 21:25:32: Task default-task progress: 0/3
+2025-04-29 21:25:35: Task default-task completed successfully
