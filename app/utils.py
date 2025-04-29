@@ -11,6 +11,12 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+# --- Terminal State ---
+# WARNING: This global variable approach assumes a single user/session for the terminal.
+# For multi-user support, this state would need to be managed differently (e.g., Flask session).
+terminal_cwd = os.getcwd() # Initialize with the backend's starting directory
+# ---------------------
+
 # Global dictionary to track running processes
 # Keys are process IDs, values are process objects
 running_processes = {}
@@ -127,9 +133,22 @@ def get_docker_containers():
         logger.error(f"Error getting Docker containers: {str(e)}")
         return {"error": str(e)}
 
+# Docker control functions
+def start_docker_container(container_id):
+    """Start a specific Docker container by ID"""
+    return execute_command(f'docker start {container_id}', timeout=60)
+
+def stop_docker_container(container_id):
+    """Stop a specific Docker container by ID"""
+    return execute_command(f'docker stop {container_id}', timeout=60)
+
+def restart_docker_container(container_id):
+    """Restart a specific Docker container by ID"""
+    return execute_command(f'docker restart {container_id}', timeout=60)
+
 def execute_command(command_str, timeout=30):
     """
-    Execute a shell command with safety precautions
+    Execute a shell command with safety precautions, handling 'cd' internally.
     
     Args:
         command_str: Command string to execute
@@ -138,22 +157,84 @@ def execute_command(command_str, timeout=30):
     Returns:
         Dictionary with command result information
     """
+    global terminal_cwd # Need to modify the global variable
+
     try:
         # SECURITY WARNING: This is for demonstration purposes only
         # In a production environment, you should whitelist allowed commands
         # or use a more secure approach
         
         # Split the command string into arguments
-        command = command_str.split()
+        command_parts = command_str.split()
+        if not command_parts:
+            return {"command": command_str, "error": "Empty command", "success": False}
+
+        # --- Handle 'cd' command internally --- 
+        if command_parts[0] == 'cd':
+            if len(command_parts) == 1:
+                # 'cd' without arguments - typically goes to home, but let's just stay
+                # Or maybe go to the initial CWD? For simplicity, stay.
+                target_dir = '.' # Effectively do nothing, or could go to initial CWD
+            else:
+                target_dir = command_parts[1]
+            
+            try:
+                # Calculate the new path relative to the current virtual CWD
+                new_path = os.path.abspath(os.path.join(terminal_cwd, target_dir))
+                
+                # Check if the new path is a valid directory
+                if os.path.isdir(new_path):
+                    terminal_cwd = new_path
+                    logger.info(f"Changed terminal CWD to: {terminal_cwd}")
+                    return {
+                        "command": command_str,
+                        "returncode": 0,
+                        "stdout": f"Changed directory to {terminal_cwd}", # Provide feedback
+                        "stderr": "",
+                        "success": True
+                    }
+                else:
+                    error_msg = f"cd: no such file or directory: {target_dir}"
+                    logger.warning(error_msg)
+                    return {
+                        "command": command_str,
+                        "returncode": 1,
+                        "stdout": "",
+                        "stderr": error_msg,
+                        "success": False
+                    }
+            except Exception as e:
+                error_msg = f"cd: error changing directory: {str(e)}"
+                logger.error(error_msg)
+                return {
+                    "command": command_str,
+                    "returncode": 1,
+                    "stdout": "",
+                    "stderr": error_msg,
+                    "success": False
+                }
+        # --- End of 'cd' handling ---
+
+        # For other commands, execute in a subprocess using the stored CWD
+        logger.info(f"Executing command: {' '.join(command_parts)} in CWD: {terminal_cwd}")
         
-        # Execute the command with a timeout
+        # Execute the command with a timeout and the correct CWD
         result = subprocess.run(
-            command,
+            command_parts, # Use the split parts
             capture_output=True,
             text=True,
-            timeout=timeout
+            timeout=timeout,
+            cwd=terminal_cwd # Set the current working directory for the subprocess
         )
         
+        # Log the results
+        logger.info(f"Command '{command_str}' finished with return code: {result.returncode}")
+        if result.stdout:
+            logger.info(f"Command '{command_str}' stdout:\n{result.stdout}")
+        if result.stderr:
+            # Log stderr as warning, as some commands use it for non-error info
+            logger.warning(f"Command '{command_str}' stderr:\n{result.stderr}")
+
         return {
             "command": command_str,
             "returncode": result.returncode,
@@ -422,40 +503,35 @@ def execute_script(script_config, input_data=None, timeout=30):
         # If we reached here, we're in a synchronous script execution path
         # and should have a result object
         
-        # Try to parse stdout as JSON if we expect JSON output
         output = result.stdout.strip()
-        json_output = None
-        
-        try:
-            if output:
-                json_output = json.loads(output)
-        except json.JSONDecodeError:
-            # Script output is not valid JSON
-            return {
-                "error": "Script output is not valid JSON",
-                "script": script_config['name'],
-                "raw_output": output,
-                "stderr": result.stderr,
-                "success": False
-            }
-        
-        # Make sure we return a JSON serializable object
-        if result.returncode == 0 and json_output:
-            return {
-                "script": script_config['name'],
-                "returncode": result.returncode,
-                "output": json_output,
-                "stderr": result.stderr,
-                "success": True
-            }
-        else:
-            return {
-                "script": script_config['name'],
-                "returncode": result.returncode,
-                "output": json_output if json_output else {},
-                "stderr": result.stderr,
-                "success": result.returncode == 0
-            }
+        output_type = script_config.get('output_type', 'json') # Default to json if not specified
+        parsed_output = None
+
+        # Try to parse output based on expected type
+        if output_type == 'json':
+            try:
+                if output:
+                    parsed_output = json.loads(output)
+            except json.JSONDecodeError:
+                logger.error(f"Script '{script_config['name']}' output was not valid JSON.")
+                return {
+                    "error": "Script output is not valid JSON",
+                    "script": script_config['name'],
+                    "raw_output": output,
+                    "stderr": result.stderr,
+                    "success": False
+                }
+        else: # Handle as plain text
+            parsed_output = output
+
+        # Return result
+        return {
+            "script": script_config['name'],
+            "returncode": result.returncode,
+            "output": parsed_output, # Use the parsed output (JSON or text)
+            "stderr": result.stderr,
+            "success": result.returncode == 0
+        }
     
     except subprocess.TimeoutExpired:
         return {

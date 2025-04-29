@@ -1,0 +1,7 @@
+name: emergency_stop_script
+description: Executes the emergency stop procedure.
+script_path: emergency_stop.py  # Path relative to the scripts directory
+endpoint: /api/scripts/emergency_stop_script # API endpoint to trigger this script
+parameters: {} # Define expected parameters if any
+output_type: text # Expected output type (text, json, etc.)
+async: false # Whether the script runs asynchronously

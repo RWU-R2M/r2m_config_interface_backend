@@ -3,6 +3,8 @@ from flask_restful import Resource
 from app.utils import get_system_stats, get_docker_containers, execute_command
 from app.utils import load_script_configs, execute_script, list_available_scripts
 from app.utils import get_process_status, list_running_processes, get_network_stats
+# Import the new Docker control functions
+from app.utils import start_docker_container, stop_docker_container, restart_docker_container
 import logging
 import shlex
 import os
@@ -51,6 +53,46 @@ class DockerAPI(Resource):
             return containers
         except Exception as e:
             logger.error(f"Error in DockerAPI: {str(e)}")
+            return {"error": str(e)}, 500
+
+# Add new resources for Docker container actions
+class DockerStartAPI(Resource):
+    def post(self, container_id):
+        """Endpoint to start a Docker container"""
+        try:
+            result = start_docker_container(container_id)
+            if result.get('success', False):
+                return result
+            else:
+                return result, 500 # Return 500 if command failed
+        except Exception as e:
+            logger.error(f"Error starting container {container_id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+class DockerStopAPI(Resource):
+    def post(self, container_id):
+        """Endpoint to stop a Docker container"""
+        try:
+            result = stop_docker_container(container_id)
+            if result.get('success', False):
+                return result
+            else:
+                return result, 500 # Return 500 if command failed
+        except Exception as e:
+            logger.error(f"Error stopping container {container_id}: {str(e)}")
+            return {"error": str(e)}, 500
+
+class DockerRestartAPI(Resource):
+    def post(self, container_id):
+        """Endpoint to restart a Docker container"""
+        try:
+            result = restart_docker_container(container_id)
+            if result.get('success', False):
+                return result
+            else:
+                return result, 500 # Return 500 if command failed
+        except Exception as e:
+            logger.error(f"Error restarting container {container_id}: {str(e)}")
             return {"error": str(e)}, 500
 
 class CommandAPI(Resource):
@@ -232,6 +274,10 @@ def get_api_resources():
         {'resource': SystemStatsAPI, 'endpoint': '/api/system', 'enabled': enable_system},
         {'resource': NetworkStatsAPI, 'endpoint': '/api/system/network', 'enabled': enable_system},
         {'resource': DockerAPI, 'endpoint': '/api/docker', 'enabled': enable_docker},
+        # Add the new Docker action endpoints
+        {'resource': DockerStartAPI, 'endpoint': '/api/docker/<string:container_id>/start', 'enabled': enable_docker},
+        {'resource': DockerStopAPI, 'endpoint': '/api/docker/<string:container_id>/stop', 'enabled': enable_docker},
+        {'resource': DockerRestartAPI, 'endpoint': '/api/docker/<string:container_id>/restart', 'enabled': enable_docker},
         {'resource': CommandAPI, 'endpoint': '/api/execute', 'enabled': enable_command},
         {'resource': ScriptsListAPI, 'endpoint': '/api/scripts', 'enabled': enable_scripts},
         {'resource': ScriptExecuteAPI, 'endpoint': '/api/scripts/<string:script_name>', 'enabled': enable_scripts},
