@@ -1,5 +1,5 @@
 ROS Web Dashboard Backend Test Results
-Date: 2025-04-29 18:56:58
+Date: 2025-04-29 20:54:34
 ======================================================================
 
 [SUCCESS] API server is running at http://localhost:5000
@@ -24,33 +24,33 @@ Date: 2025-04-29 18:56:58
 [TEST] Testing: Start Long Task (POST /api/scripts/long-task)
 [INFO] Response received: dict
 [SUCCESS] Test passed
-[INFO] Created process with ID: 45241
-[TEST] Testing: Get Process Status (ID: 45241) (GET /api/processes/45241)
+[INFO] Created process with ID: 35760
+[TEST] Testing: Get Process Status (ID: 35760) (GET /api/processes/35760)
 [INFO] Response received: dict
 [SUCCESS] Test passed
 [INFO] Process status: {
   "script": "long-task",
-  "process_id": 45241,
+  "process_id": 35760,
   "running": true,
-  "start_time": 1745945820.2130423,
+  "start_time": 1745952876.7163048,
   "duration": 1.01,
   "success": true
 }
 [INFO] Waiting for process to complete...
-[TEST] Testing: Check Process Completion Status (GET /api/processes/45241)
+[TEST] Testing: Check Process Completion Status (GET /api/processes/35760)
 [INFO] Response received: dict
 [SUCCESS] Test passed
-[TEST] Testing: Check Process Completion Status (GET /api/processes/45241)
+[TEST] Testing: Check Process Completion Status (GET /api/processes/35760)
 [INFO] Response received: dict
 [SUCCESS] Test passed
-[TEST] Testing: Check Process Completion Status (GET /api/processes/45241)
+[TEST] Testing: Check Process Completion Status (GET /api/processes/35760)
 [INFO] Response received: dict
 [SUCCESS] Test passed
 [SUCCESS] Process completed successfully!
 [TEST] Testing: List Processes After Completion (GET /api/processes)
 [INFO] Response received: dict
 [SUCCESS] Test passed
-[SUCCESS] Process 45241 found in process list
+[SUCCESS] Process 35760 found in process list
 [INFO] 
 [INFO] ======================================================================
 [INFO]                        Script Management Tests                        
@@ -60,8 +60,8 @@ Date: 2025-04-29 18:56:58
 [INFO] Response received: dict
 [SUCCESS] Test passed
 [INFO] Found 5 scripts
-[WARNING] Missing expected script: long-task
-[WARNING] Missing expected script: example-system-status
+[SUCCESS] Found expected script: long-task
+[SUCCESS] Found expected script: example-system-status
 [TEST] Testing: Run System Status Script (POST /api/scripts/example-system-status)
 [INFO] Response received: dict
 [SUCCESS] Test passed
@@ -74,7 +74,7 @@ Date: 2025-04-29 18:56:58
 [TEST] Testing: List Docker Containers (GET /api/docker)
 [INFO] Response received: dict
 [SUCCESS] Test passed
-[INFO] Found 37 Docker containers
+[INFO] Found 35 Docker containers
 [INFO] Skipping container-specific tests - API returns 405 Method Not Allowed
 [INFO] 
 [INFO] ======================================================================
@@ -123,5 +123,5 @@ Date: 2025-04-29 18:56:58
 [INFO] ======================================================================
 [INFO] 
 [SUCCESS] All tests passed successfully!
-[INFO] Test execution completed in 6.09 seconds
+[INFO] Test execution completed in 5.90 seconds
 [INFO] Results logged to: /home/luque/Documents/UNI/R2M/ROS/WEB_DASHBOARD_STATS/localbackend/test/test_results.log

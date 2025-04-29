@@ -250,7 +250,7 @@ def test_script_management():
         
         # Check if we have the expected scripts
         expected_scripts = ["long-task", "example-system-status"]
-        found_scripts = [s.get("id") for s in scripts_data.get("scripts", [])]
+        found_scripts = [s.get("name") for s in scripts_data.get("scripts", [])]
         
         for script in expected_scripts:
             if script in found_scripts:
