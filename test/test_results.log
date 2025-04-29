@@ -1,5 +1,5 @@
 ROS Web Dashboard Backend Test Results
-Date: 2025-04-29 21:11:17
+Date: 2025-04-29 21:12:56
 ======================================================================
 
 [SUCCESS] API server is running at http://localhost:5000
@@ -24,33 +24,33 @@ Date: 2025-04-29 21:11:17
 [TEST] Testing: Start Long Task (POST /api/scripts/long-task)
 [INFO] Response received: dict
 [SUCCESS] Test passed
-[INFO] Created process with ID: 43776
-[TEST] Testing: Get Process Status (ID: 43776) (GET /api/processes/43776)
+[INFO] Created process with ID: 44709
+[TEST] Testing: Get Process Status (ID: 44709) (GET /api/processes/44709)
 [INFO] Response received: dict
 [SUCCESS] Test passed
 [INFO] Process status: {
   "script": "long-task",
-  "process_id": 43776,
+  "process_id": 44709,
   "running": true,
-  "start_time": 1745953879.079132,
+  "start_time": 1745953978.2640562,
   "duration": 1.01,
   "success": true
 }
 [INFO] Waiting for process to complete...
-[TEST] Testing: Check Process Completion Status (GET /api/processes/43776)
+[TEST] Testing: Check Process Completion Status (GET /api/processes/44709)
 [INFO] Response received: dict
 [SUCCESS] Test passed
-[TEST] Testing: Check Process Completion Status (GET /api/processes/43776)
+[TEST] Testing: Check Process Completion Status (GET /api/processes/44709)
 [INFO] Response received: dict
 [SUCCESS] Test passed
-[TEST] Testing: Check Process Completion Status (GET /api/processes/43776)
+[TEST] Testing: Check Process Completion Status (GET /api/processes/44709)
 [INFO] Response received: dict
 [SUCCESS] Test passed
 [SUCCESS] Process completed successfully!
 [TEST] Testing: List Processes After Completion (GET /api/processes)
 [INFO] Response received: dict
 [SUCCESS] Test passed
-[SUCCESS] Process 43776 found in process list
+[SUCCESS] Process 44709 found in process list
 [INFO] 
 [INFO] ======================================================================
 [INFO]                        Script Management Tests                        
@@ -124,5 +124,5 @@ Date: 2025-04-29 21:11:17
 [INFO] ======================================================================
 [INFO] 
 [SUCCESS] All tests passed successfully!
-[INFO] Test execution completed in 6.05 seconds
+[INFO] Test execution completed in 6.22 seconds
 [INFO] Results logged to: /home/luque/Documents/UNI/R2M/ROS/WEB_DASHBOARD_STATS/localbackend/test/test_results.log
