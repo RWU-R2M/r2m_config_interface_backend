@@ -413,7 +413,6 @@ def run_all_tests():
     all_results["docker_functionality"] = test_docker_functionality()
     all_results["command_execution"] = test_command_execution()
     all_results["error_handling"] = test_error_handling()
-    
     return all_results
 
 def main():
