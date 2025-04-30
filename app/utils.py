@@ -463,14 +463,18 @@ def execute_script(script_config, input_data=None, timeout=30):
                     }
                 else:
                     # For synchronous scripts with stdin input
+                    # input is bytes, so text=False (default)
                     result = subprocess.run(
                         command,
                         input=stdin_data,
                         env=env,
                         capture_output=True,
-                        text=True,
+                        # text=True, # REMOVED: input is bytes
                         timeout=timeout
                     )
+                    # Manually decode stdout/stderr since text=False
+                    stdout_str = result.stdout.decode() if result.stdout else ''
+                    stderr_str = result.stderr.decode() if result.stderr else ''
         else:
             # Script doesn't accept input or no input provided
             if is_async:
@@ -501,19 +505,23 @@ def execute_script(script_config, input_data=None, timeout=30):
                     "success": True
                 }
             else:
-                # For synchronous scripts without input
+                # For synchronous scripts without input, text=True is fine
                 result = subprocess.run(
                     command,
                     env=env,
                     capture_output=True,
-                    text=True,
+                    text=True, # OK here, no input provided
                     timeout=timeout
                 )
+                # stdout/stderr are already strings due to text=True
+                stdout_str = result.stdout
+                stderr_str = result.stderr
         
         # If we reached here, we're in a synchronous script execution path
         # and should have a result object
         
-        output = result.stdout.strip()
+        # Use the decoded stdout string
+        output = stdout_str.strip()
         # Use .get() for optional output_type, defaulting to 'json'
         output_type = script_config.get('output_type', 'json')
         parsed_output = None
@@ -529,7 +537,7 @@ def execute_script(script_config, input_data=None, timeout=30):
                     "error": "Script output is not valid JSON",
                     "script": script_config['name'],
                     "raw_output": output,
-                    "stderr": result.stderr,
+                    "stderr": stderr_str, # Use decoded stderr
                     "success": False
                 }
         else: # Handle as plain text
@@ -540,7 +548,7 @@ def execute_script(script_config, input_data=None, timeout=30):
             "script": script_config['name'],
             "returncode": result.returncode,
             "output": parsed_output, # Use the parsed output (JSON or text)
-            "stderr": result.stderr,
+            "stderr": stderr_str, # Use decoded stderr
             "success": result.returncode == 0
         }
     
