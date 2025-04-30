@@ -3,24 +3,21 @@
 # Read JSON input from stdin
 input_json=$(cat)
 
-# Check if jq is installed
-if ! command -v jq &> /dev/null
-then
-    # Output error as JSON
-    printf '{"error": "jq is not installed. Cannot parse JSON input."}'
-    exit 1
-fi
-
-# Parse the JSON input using jq to get the test_message field
-# Use -e to exit with error if key not found, || true to handle missing key gracefully
-# Use -r to get raw string output without quotes
+# Attempt to parse the test_message field using jq.
+# -e exits with error if key not found or input is invalid JSON.
+# -r outputs raw string without quotes.
+# Errors are redirected to /dev/null to keep the output clean.
 test_message=$(echo "$input_json" | jq -e -r '.test_message' 2>/dev/null)
 
-# Check if jq failed to parse or find the key
-if [ $? -ne 0 ]; then
-  test_message="Default message: Input did not contain 'test_message' or was not valid JSON."
+# Check the exit status of jq
+if [ $? -eq 0 ]; then
+  # jq succeeded, use the extracted message
+  output_message="$test_message"
+else
+  # jq failed (not installed, invalid JSON, or key missing)
+  output_message="Default message: Could not extract 'test_message' from input."
 fi
 
-# Output the result as JSON matching the expected_output schema
+# Output the result as JSON
 # Use printf for safer JSON string escaping
-printf '{"message": "%s"}\n' "$test_message"
+printf '{"message": "%s"}\n' "$output_message"

@@ -249,7 +249,8 @@ def test_script_management():
         log(f"Found {len(scripts_data.get('scripts', []))} scripts", "INFO")
         
         # Check if we have the expected scripts
-        expected_scripts = ["long-task", "example-system-status", "advanced-system-monitor", "docker-manager"] # Added expected scripts
+        # Updated 'example-system-status' to 'system-status' and added 'test-bash'
+        expected_scripts = ["long-task", "system-status", "advanced-system-monitor", "docker-manager", "test-bash"] 
         found_scripts = [s.get("name") for s in scripts_data.get("scripts", [])]
         
         for script in expected_scripts:
@@ -260,9 +261,10 @@ def test_script_management():
                 # Optionally mark as failure if script presence is critical
                 # results.append(False) 
     
-    # 2. Run example-system-status script (sync, no input)
+    # 2. Run system-status script (sync, no input)
+    # Updated endpoint from 'example-system-status' to 'system-status'
     success, status_result = test_endpoint(
-        "/api/scripts/example-system-status", 
+        "/api/scripts/system-status", 
         method="POST", 
         data={}, # No data needed
         description="Run System Status Script"
