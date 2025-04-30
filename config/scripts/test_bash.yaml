@@ -1,9 +1,17 @@
-name: "example-system-status"
-description: "EXAMPLE: Get detailed system status information (for demonstration only)"
-script_path: "examples/example_system_status.py"
+name: "test-bash"
+description: "EXAMPLE: Test script that accepts a JSON input with a 'test_message' field and echoes it back."
+script_path: "examples/test_bash.sh"
 endpoint: "status"
-accepts_input: false
+accepts_input: true
 input_method: "json"
+input_schema:
+  type: object
+  properties:
+    test_message:
+      type: string
+      description: "A simple test message to echo back."
+      default: "No message provided"
+  required: []
 async: false
 expected_output:
   message: "string"
