@@ -99,6 +99,11 @@ def main():
     long_task_data = {"task_name": "test-task", "duration": 5}
     test_endpoint("/api/scripts/long-task", method="POST", data=long_task_data,
                  description="Execute Long Task Script")
+
+    # Test a synchronous script accepting JSON input (added test case)
+    advanced_monitor_data = {"detail_level": "basic", "component": "cpu"}
+    test_endpoint("/api/scripts/advanced-system-monitor", method="POST", data=advanced_monitor_data,
+                 description="Execute Advanced System Monitor Script")
     
     print_separator("Test Completed")
     print("\nIf all tests show 'Success', your API server is working correctly.")

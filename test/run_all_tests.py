@@ -249,7 +249,7 @@ def test_script_management():
         log(f"Found {len(scripts_data.get('scripts', []))} scripts", "INFO")
         
         # Check if we have the expected scripts
-        expected_scripts = ["long-task", "example-system-status"]
+        expected_scripts = ["long-task", "example-system-status", "advanced-system-monitor", "docker-manager"] # Added expected scripts
         found_scripts = [s.get("name") for s in scripts_data.get("scripts", [])]
         
         for script in expected_scripts:
@@ -257,18 +257,39 @@ def test_script_management():
                 log(f"Found expected script: {script}", "SUCCESS", Colors.GREEN)
             else:
                 log(f"Missing expected script: {script}", "WARNING", Colors.YELLOW)
+                # Optionally mark as failure if script presence is critical
+                # results.append(False) 
     
-    # 2. Run example-system-status script
+    # 2. Run example-system-status script (sync, no input)
     success, status_result = test_endpoint(
         "/api/scripts/example-system-status", 
         method="POST", 
-        data={}, 
+        data={}, # No data needed
         description="Run System Status Script"
     )
     results.append(success)
     
     if success and status_result:
         log("System status script executed successfully", "SUCCESS", Colors.GREEN)
+
+    # 3. Run advanced-system-monitor script (sync, JSON input via stdin) - ADDED TEST
+    monitor_data = {"detail_level": "basic", "component": "cpu"}
+    success, monitor_result = test_endpoint(
+        "/api/scripts/advanced-system-monitor",
+        method="POST",
+        data=monitor_data,
+        description="Run Advanced System Monitor Script (Sync, JSON Input)"
+    )
+    results.append(success)
+
+    if success and monitor_result:
+        # Basic validation of the output structure - CHECK INSIDE 'output' KEY
+        script_output = monitor_result.get("output", {})
+        if script_output.get("success") and "data" in script_output:
+             log("Advanced system monitor script executed successfully", "SUCCESS", Colors.GREEN)
+        else:
+             log(f"Advanced system monitor script execution failed or returned unexpected data: {monitor_result}", "ERROR", Colors.RED)
+             results.append(False)
     
     return all(results)
 
