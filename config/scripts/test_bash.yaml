@@ -1,0 +1,10 @@
+name: "example-system-status"
+description: "EXAMPLE: Get detailed system status information (for demonstration only)"
+script_path: "examples/example_system_status.py"
+endpoint: "status"
+accepts_input: false
+input_method: "json"
+async: false
+expected_output:
+  message: "string"
+

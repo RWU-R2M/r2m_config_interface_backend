@@ -1,13 +1,24 @@
-name: "example-system-status"
-description: "EXAMPLE: Get detailed system status information (for demonstration only)"
+name: "system-status"
+description: "Get detailed system status information"
 script_path: "examples/example_system_status.py"
 endpoint: "status"
 accepts_input: false
+input_method: "json"
 async: false
 expected_output:
-  status: "string"
-  cpu_temp: "number"
-  uptime: "string"
-  hostname: "string"
-  platform: "string"
-  cpu_cores: "number"
+  cpu:
+    total_percent: "number"
+    per_core: "array"
+    cores: "integer"
+    physical_cores: "integer"
+  memory:
+    total: "integer"
+    available: "integer"
+    used: "integer"
+    percent: "number"
+  disk:
+    total: "integer"
+    used: "integer"
+    free: "integer"
+    percent: "number"
+  network: "object"

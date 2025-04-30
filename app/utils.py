@@ -10,6 +10,7 @@ import yaml
 import threading
 import time
 from pathlib import Path
+import jsonschema # Import jsonschema for validation
 
 logger = logging.getLogger(__name__)
 
@@ -228,6 +229,77 @@ def execute_command(command_str, timeout=30):
         }
         
 # Script-related utility functions
+def validate_script_config(config, config_file_path):
+    """
+    Validate that a script configuration adheres to the defined standard.
+
+    Args:
+        config: The script configuration dictionary to validate.
+        config_file_path: The path to the config file (for logging).
+
+    Returns:
+        Boolean indicating whether the configuration is valid.
+    """
+    # Define the standard fields and their expected types
+    standard_fields = {
+        'name': str,
+        'description': str,
+        'script_path': str,
+        'endpoint': str,
+        'accepts_input': bool,
+        'input_method': str, # Should be 'json' or 'env'
+        'async': bool,
+    }
+
+    # 1. Check for missing standard fields
+    for field in standard_fields:
+        if field not in config:
+            logger.error(f"Invalid config in {config_file_path}: Missing required field '{field}'.")
+            return False
+
+    # 2. Check types of standard fields
+    for field, expected_type in standard_fields.items():
+        if not isinstance(config[field], expected_type):
+            logger.error(f"Invalid config in {config_file_path}: Field '{field}' should be type {expected_type.__name__}, but got {type(config[field]).__name__}.")
+            return False
+
+    # 3. Validate specific field values
+    if config['input_method'] not in ['json', 'env']:
+        logger.error(f"Invalid config in {config_file_path}: Field 'input_method' must be 'json' or 'env', but got '{config['input_method']}'.")
+        return False
+
+    # 4. Conditional validation for input_schema
+    if config['accepts_input']:
+        if 'input_schema' not in config:
+            logger.warning(f"Config warning in {config_file_path}: Script '{config['name']}' accepts input but does not define 'input_schema'.")
+        elif not isinstance(config['input_schema'], dict):
+             logger.error(f"Invalid config in {config_file_path}: Field 'input_schema' must be a dictionary (JSON Schema object), but got {type(config['input_schema']).__name__}.")
+             return False
+
+    # 5. Conditional validation for expected_output (for synchronous scripts)
+    if not config['async']:
+        if 'expected_output' not in config:
+            logger.warning(f"Config warning in {config_file_path}: Synchronous script '{config['name']}' does not define 'expected_output'.")
+        elif not isinstance(config['expected_output'], (dict, str)):
+             logger.error(f"Invalid config in {config_file_path}: Field 'expected_output' must be a dictionary or a string, but got {type(config['expected_output']).__name__}.")
+             return False
+
+    # 6. Validate that the script file exists
+    script_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts'))
+    script_path = os.path.join(script_dir, config['script_path'])
+
+    if not os.path.exists(script_path):
+        logger.error(f"Invalid config in {config_file_path}: Script file not found at '{script_path}' (relative to {script_dir}).")
+        return False
+
+    # 7. Check for unknown fields (optional, makes it stricter)
+    allowed_fields = set(standard_fields.keys()) | {'input_schema', 'expected_output'}
+    for key in config:
+        if key not in allowed_fields:
+            logger.warning(f"Config warning in {config_file_path}: Unknown field '{key}' found in script '{config['name']}'.")
+
+    return True
+
 def load_script_configs():
     """
     Load all script configurations from the config/scripts directory
@@ -253,11 +325,12 @@ def load_script_configs():
                 else:
                     config = json.load(f)
                 
-                # Validate that the config has the required fields
-                if not validate_script_config(config):
-                    logger.error(f"Invalid script configuration in {config_file}")
-                    continue
-                
+                # Validate the config against the stricter standard
+                # Pass the config file path for better logging
+                if not validate_script_config(config, config_file):
+                    # Log message is handled within validate_script_config
+                    continue # Skip this invalid config
+
                 script_name = config['name']
                 script_configs[script_name] = config
                 logger.info(f"Loaded script configuration for '{script_name}' from {config_file.name}")
@@ -266,82 +339,38 @@ def load_script_configs():
     
     return script_configs
 
-def validate_script_config(config):
-    """
-    Validate that a script configuration has all required fields
-    
-    Args:
-        config: The script configuration to validate
-        
-    Returns:
-        Boolean indicating whether the configuration is valid
-    """
-    required_fields = ['name', 'script_path', 'endpoint', 'description']
-    for field in required_fields:
-        if field not in config:
-            logger.error(f"Script configuration missing required field: {field}")
-            return False
-    
-    # Validate that the script file exists
-    script_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'scripts'))
-    script_path = os.path.join(script_dir, config['script_path'])
-    
-    # Check if script exists either directly or in examples directory
-    if not os.path.exists(script_path):
-        # If not found, try looking in the examples directory if the path specifies it
-        if config['script_path'].startswith('examples/'):
-            # Script path already includes examples/ prefix, just check if it exists
-            if not os.path.exists(script_path):
-                logger.error(f"Script file not found: {script_path}")
-                return False
-        else:
-            logger.error(f"Script file not found: {script_path}")
-            return False
-    
-    # If script is synchronous, it should define expected_output fields
-    # Use .get() for optional fields like 'async'
-    if config.get('async', False) is False and 'expected_output' not in config:
-        logger.warning(f"Synchronous script '{config['name']}' does not define expected_output")
-
-    return True
-
 def validate_script_input(input_schema, input_data):
     """
-    Validate input_data against the input_schema from the script config.
+    Validate input_data against the input_schema from the script config using jsonschema.
     Returns (True, None) if valid, (False, error_message) if invalid.
     """
     if not input_schema:
-        return True, None  # No schema, accept anything
+        # If accepts_input is true but no schema is defined, allow any input.
+        # Validation logic in validate_script_config handles warnings/errors for missing schema.
+        return True, None
 
-    # Use .get() with defaults for potentially missing schema keys
-    required = input_schema.get('required', [])
-    properties = input_schema.get('properties', {})
+    # Ensure input_data is a dictionary if schema expects an object
+    if input_schema.get('type') == 'object' and input_data is None:
+        input_data = {} # Treat null input as empty object for validation
 
-    # Check for missing required fields
-    for key in required:
-        if key not in input_data:
-            return False, f"Missing required parameter: '{key}'"
-
-    # Check for extra fields
-    for key in input_data:
-        if key not in properties:
-            return False, f"Unexpected parameter: '{key}'"
-
-    # Check types
-    type_map = {
-        'string': str,
-        'integer': int,
-        'number': (int, float),
-        'boolean': bool
-    }
-    for key, prop in properties.items():
-        if key in input_data:
-            # Use .get() for potentially missing 'type' in property definition
-            expected_type = prop.get('type')
-            if expected_type and expected_type in type_map:
-                if not isinstance(input_data[key], type_map[expected_type]):
-                    return False, f"Parameter '{key}' should be of type '{expected_type}'"
-    return True, None
+    try:
+        # Use jsonschema library for robust validation
+        jsonschema.validate(instance=input_data, schema=input_schema)
+        return True, None
+    except jsonschema.ValidationError as e:
+        # Provide a user-friendly error message
+        error_path = " -> ".join(map(str, e.path))
+        error_msg = f"Input validation failed for field '{error_path}': {e.message}" if e.path else f"Input validation failed: {e.message}"
+        logger.warning(f"Script input validation error: {error_msg} (Schema: {input_schema}, Data: {input_data})")
+        return False, error_msg
+    except jsonschema.SchemaError as e:
+        # This indicates an invalid schema in the config file itself
+        logger.error(f"Invalid input_schema detected during validation: {e}")
+        return False, "Server configuration error: Invalid input schema defined for this script."
+    except Exception as e:
+        # Catch unexpected errors during validation
+        logger.error(f"Unexpected error during input validation: {e}")
+        return False, f"An unexpected error occurred during input validation: {e}"
 
 def execute_script(script_config, input_data=None, timeout=30):
     """
@@ -469,7 +498,6 @@ def execute_script(script_config, input_data=None, timeout=30):
                         input=stdin_data,
                         env=env,
                         capture_output=True,
-                        # text=True, # REMOVED: input is bytes
                         timeout=timeout
                     )
                     # Manually decode stdout/stderr since text=False
@@ -510,7 +538,7 @@ def execute_script(script_config, input_data=None, timeout=30):
                     command,
                     env=env,
                     capture_output=True,
-                    text=True, # OK here, no input provided
+                    text=True,
                     timeout=timeout
                 )
                 # stdout/stderr are already strings due to text=True
@@ -700,23 +728,17 @@ def list_available_scripts():
     safe_configs = []
     for name, config in script_configs.items():
         safe_config = {
-            'name': config['name'], # name is required, so [] is okay here
-            'description': config['description'], # description is required
-            'endpoint': config['endpoint'], # endpoint is required
-            # Use .get() for optional fields, providing defaults
+            'name': config.get('name'), # Use .get() as validation now happens earlier
+            'description': config.get('description'),
+            'endpoint': config.get('endpoint'),
             'accepts_input': config.get('accepts_input', False),
-            'async': config.get('async', False)
+            'async': config.get('async', False),
+            # Include input_schema and expected_output if they exist
+            'input_schema': config.get('input_schema'),
+            'expected_output': config.get('expected_output')
         }
-
-        # Include input_schema if present (use .get)
-        input_schema = config.get('input_schema')
-        if input_schema:
-            safe_config['input_schema'] = input_schema
-
-        # Include expected_output if present (use .get)
-        expected_output = config.get('expected_output')
-        if expected_output:
-            safe_config['expected_output'] = expected_output
+        # Remove keys with None values if they were missing in the original valid config
+        safe_config = {k: v for k, v in safe_config.items() if v is not None}
 
         safe_configs.append(safe_config)
 
