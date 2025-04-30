@@ -256,6 +256,51 @@ class ProcessListAPI(Resource):
             logger.error(f"Error in ProcessListAPI: {str(e)}")
             return {"error": str(e)}, 500
 
+# --- Add Shutdown and Reboot API Resources ---
+class ShutdownAPI(Resource):
+    def post(self):
+        """Endpoint to shut down the system"""
+        try:
+            # SECURITY WARNING: This command has significant system impact.
+            # Ensure this endpoint is properly secured in a production environment.
+            logger.warning("Received request to SHUT DOWN the system.")
+            # Use '-h' for halt/power off, adjust if needed (e.g., '-r' for reboot)
+            # Add 'sudo' if the backend doesn't run as root and needs privileges
+            # result = execute_command('sudo shutdown -h now', timeout=10) 
+            result = execute_command('shutdown -h now', timeout=10) # Assuming backend runs with sufficient privileges
+            if result.get('success', False):
+                return {"message": "Shutdown command initiated successfully."}
+            else:
+                # Log the specific error from execute_command
+                error_detail = result.get('error', result.get('stderr', 'Unknown execution error'))
+                logger.error(f"Shutdown command failed: {error_detail}")
+                return {"error": "Failed to initiate shutdown.", "details": error_detail}, 500
+        except Exception as e:
+            logger.error(f"Error in ShutdownAPI: {str(e)}")
+            return {"error": str(e)}, 500
+
+class RebootAPI(Resource):
+    def post(self):
+        """Endpoint to reboot the system"""
+        try:
+            # SECURITY WARNING: This command has significant system impact.
+            # Ensure this endpoint is properly secured in a production environment.
+            logger.warning("Received request to REBOOT the system.")
+            # Add 'sudo' if the backend doesn't run as root and needs privileges
+            # result = execute_command('sudo reboot', timeout=10)
+            result = execute_command('reboot', timeout=10) # Assuming backend runs with sufficient privileges
+            if result.get('success', False):
+                return {"message": "Reboot command initiated successfully."}
+            else:
+                # Log the specific error from execute_command
+                error_detail = result.get('error', result.get('stderr', 'Unknown execution error'))
+                logger.error(f"Reboot command failed: {error_detail}")
+                return {"error": "Failed to initiate reboot.", "details": error_detail}, 500
+        except Exception as e:
+            logger.error(f"Error in RebootAPI: {str(e)}")
+            return {"error": str(e)}, 500
+# --- End of Shutdown and Reboot API Resources ---
+
 # Function to get API resources with env var configuration
 def get_api_resources():
     """Get API resources with configuration from environment variables"""
@@ -268,6 +313,8 @@ def get_api_resources():
     enable_command = os.environ.get('ENABLE_COMMAND_ENDPOINT', 'true').lower() == 'true'
     enable_scripts = os.environ.get('ENABLE_SCRIPTS_ENDPOINT', 'true').lower() == 'true'
     enable_processes = os.environ.get('ENABLE_PROCESSES_ENDPOINT', 'true').lower() == 'true'
+    # Add a flag for control endpoints, default to true
+    enable_control = os.environ.get('ENABLE_CONTROL_ENDPOINT', 'true').lower() == 'true'
     
     # Create resources list with enabled flag
     resources = [
@@ -283,7 +330,10 @@ def get_api_resources():
         {'resource': ScriptsListAPI, 'endpoint': '/api/scripts', 'enabled': enable_scripts},
         {'resource': ScriptExecuteAPI, 'endpoint': '/api/scripts/<string:script_name>', 'enabled': enable_scripts},
         {'resource': ProcessStatusAPI, 'endpoint': '/api/processes/<string:process_id>', 'enabled': enable_processes},
-        {'resource': ProcessListAPI, 'endpoint': '/api/processes', 'enabled': enable_processes}
+        {'resource': ProcessListAPI, 'endpoint': '/api/processes', 'enabled': enable_processes},
+        # Add the new control endpoints
+        {'resource': ShutdownAPI, 'endpoint': '/api/control/shutdown', 'enabled': enable_control},
+        {'resource': RebootAPI, 'endpoint': '/api/control/reboot', 'enabled': enable_control}
     ]
     
     return resources
