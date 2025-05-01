@@ -245,6 +245,30 @@ class ProcessStatusAPI(Resource):
             logger.error(f"Error in ProcessStatusAPI: {str(e)}")
             return {"error": str(e)}, 500
 
+class ProcessKillAPI(Resource):
+    """API endpoint to kill/terminate a running process"""
+    def post(self, process_id):
+        """
+        Kill a running process
+        
+        Args:
+            process_id: The process ID to kill
+        """
+        try:
+            # Import here to avoid circular imports
+            from app.utils import kill_process
+            
+            result = kill_process(process_id)
+            if result.get('success', False):
+                return result
+            else:
+                error_code = 404 if result.get('not_found', False) else 500
+                return result, error_code
+                
+        except Exception as e:
+            logger.error(f"Error in ProcessKillAPI: {str(e)}")
+            return {"error": str(e)}, 500
+
 class ProcessListAPI(Resource):
     """API endpoint to list all tracked processes"""
     def get(self):
@@ -330,6 +354,7 @@ def get_api_resources():
         {'resource': ScriptsListAPI, 'endpoint': '/api/scripts', 'enabled': enable_scripts},
         {'resource': ScriptExecuteAPI, 'endpoint': '/api/scripts/<string:script_name>', 'enabled': enable_scripts},
         {'resource': ProcessStatusAPI, 'endpoint': '/api/processes/<string:process_id>', 'enabled': enable_processes},
+        {'resource': ProcessKillAPI, 'endpoint': '/api/processes/<string:process_id>/kill', 'enabled': enable_processes},
         {'resource': ProcessListAPI, 'endpoint': '/api/processes', 'enabled': enable_processes},
         # Add the new control endpoints
         {'resource': ShutdownAPI, 'endpoint': '/api/control/shutdown', 'enabled': enable_control},

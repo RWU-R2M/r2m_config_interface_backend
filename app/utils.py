@@ -735,7 +735,9 @@ def list_available_scripts():
             'async': config.get('async', False),
             # Include input_schema and expected_output if they exist
             'input_schema': config.get('input_schema'),
-            'expected_output': config.get('expected_output')
+            'expected_output': config.get('expected_output'),
+            # Add script_path to output for UI
+            'script_path': config.get('script_path', '')
         }
         # Remove keys with None values if they were missing in the original valid config
         safe_config = {k: v for k, v in safe_config.items() if v is not None}
@@ -743,3 +745,83 @@ def list_available_scripts():
         safe_configs.append(safe_config)
 
     return safe_configs
+
+def kill_process(process_id):
+    """
+    Kill a running process
+    
+    Args:
+        process_id: The process ID to kill
+        
+    Returns:
+        Dictionary with status information
+    """
+    try:
+        pid = int(process_id)  # Convert to integer
+        
+        with processes_lock:
+            if pid not in running_processes:
+                return {
+                    "error": f"Process ID {pid} not found or already terminated",
+                    "not_found": True,
+                    "success": False
+                }
+            
+            process_info = running_processes[pid]
+            
+            # Only attempt to kill if the process is still running
+            if not process_info.get('completed', False):
+                process = process_info['process']
+                
+                try:
+                    # Try to kill the process gracefully first
+                    process.terminate()
+                    
+                    # Give it a moment to terminate
+                    time.sleep(0.5)
+                    
+                    # Check if it's still running
+                    if process.poll() is None:
+                        # Force kill if still running
+                        process.kill()
+                    
+                    # Update process info
+                    process_info['completed'] = True
+                    process_info['end_time'] = time.time()
+                    process_info['returncode'] = process.returncode or -1  # Use actual code or -1
+                    process_info['killed'] = True
+                    
+                    logger.info(f"Process {pid} ({process_info['name']}) terminated successfully")
+                    
+                    return {
+                        "process_id": pid,
+                        "script": process_info['name'],
+                        "message": f"Process {pid} terminated successfully",
+                        "success": True
+                    }
+                except Exception as e:
+                    logger.error(f"Error killing process {pid}: {str(e)}")
+                    return {
+                        "process_id": pid,
+                        "error": f"Failed to kill process: {str(e)}",
+                        "success": False
+                    }
+            else:
+                # Process was already completed
+                return {
+                    "process_id": pid,
+                    "message": f"Process {pid} was already completed",
+                    "success": True
+                }
+                
+    except ValueError:
+        return {
+            "error": f"Invalid process ID: {process_id}",
+            "success": False
+        }
+    except Exception as e:
+        logger.error(f"Error in kill_process for {process_id}: {str(e)}")
+        return {
+            "error": str(e),
+            "success": False
+        }
