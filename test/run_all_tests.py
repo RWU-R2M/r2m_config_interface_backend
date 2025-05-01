@@ -235,6 +235,82 @@ def test_process_management():
     
     return all(results)
 
+def test_process_kill_functionality():
+    """Test the process kill functionality of the backend"""
+    print_separator("Process Kill Tests")
+    
+    results = []
+    
+    # 1. Start a long-running task with increased duration to ensure we have time to kill it
+    task_data = {"duration": 10}  # 10 seconds should be plenty of time to kill the process
+    success, task_result = test_endpoint(
+        "/api/scripts/long-task", 
+        method="POST", 
+        data=task_data, 
+        description="Start Long-Running Task"
+    )
+    results.append(success)
+    
+    if not success or not task_result:
+        log("Failed to start test task - cannot test process kill functionality", "ERROR", Colors.RED)
+        return False
+    
+    process_id = task_result.get("process_id")
+    if not process_id:
+        log("No process ID returned from task start", "ERROR", Colors.RED)
+        return False
+    
+    log(f"Created process with ID: {process_id} for kill testing", "INFO", Colors.CYAN)
+    
+    # 2. Verify the process started and is running
+    time.sleep(1)  # Wait a second for process to get going
+    success, process_status = test_endpoint(
+        f"/api/processes/{process_id}", 
+        description=f"Verify Process Is Running (ID: {process_id})"
+    )
+    results.append(success)
+    
+    if success and process_status:
+        if process_status.get("running", False):
+            log("Process confirmed as running and ready for kill test", "SUCCESS", Colors.GREEN)
+        else:
+            log("Process is not running, cannot proceed with kill test", "ERROR", Colors.RED)
+            return False
+    
+    # 3. Kill the process using the kill API endpoint
+    success, kill_result = test_endpoint(
+        f"/api/processes/{process_id}/kill",
+        method="POST",
+        data={},
+        description=f"Kill Running Process (ID: {process_id})"
+    )
+    results.append(success)
+    
+    if success and kill_result:
+        log(f"Kill command result: {json.dumps(kill_result, indent=2)}", "INFO")
+        if kill_result.get("success", False):
+            log(f"Successfully sent kill command to process {process_id}", "SUCCESS", Colors.GREEN)
+        else:
+            log(f"Failed to kill process {process_id}: {kill_result.get('error', 'Unknown error')}", "ERROR", Colors.RED)
+            results.append(False)
+    
+    # 4. Verify the process was terminated by checking its status
+    time.sleep(1)  # Wait a moment for kill to take effect
+    success, status = test_endpoint(
+        f"/api/processes/{process_id}", 
+        description="Check Process Status After Kill"
+    )
+    results.append(success)
+    
+    if success and status:
+        if not status.get("running", True):
+            log("Process confirmed as terminated!", "SUCCESS", Colors.GREEN)
+        else:
+            log(f"Process not terminated after kill command: {json.dumps(status, indent=2)}", "ERROR", Colors.RED)
+            results.append(False)
+    
+    return all(results)
+
 def test_script_management():
     """Test script management functionality"""
     print_separator("Script Management Tests")
@@ -411,6 +487,7 @@ def run_all_tests():
     # Run each test category and store results
     all_results["api_basics"] = test_api_basics()
     all_results["process_management"] = test_process_management()
+    all_results["process_kill_functionality"] = test_process_kill_functionality()
     all_results["script_management"] = test_script_management()
     all_results["docker_functionality"] = test_docker_functionality()
     all_results["command_execution"] = test_command_execution()
@@ -455,7 +532,7 @@ def main():
             log(f"Test category {args.test}: {success}", "RESULT", color)
         else:
             log(f"Unknown test category: {args.test}", "ERROR", Colors.RED)
-            log(f"Available categories: api_basics, process_management, script_management, "
+            log(f"Available categories: api_basics, process_management, process_kill_functionality, script_management, "
                 f"docker_functionality, command_execution, error_handling", "INFO")
             sys.exit(1)
     else:
