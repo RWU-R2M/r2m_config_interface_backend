@@ -5,5 +5,7 @@ endpoint: emergency_stop_script # API endpoint to trigger this script (removed t
 accepts_input: false # Whether the script accepts input parameters 
 input_method: json # How inputs are passed (json or env)
 input_schema: {} # Define expected parameters if any
-output_type: text # Expected output type (text, json, etc.)
 async: false # Whether the script runs asynchronously
+expected_output: # Define the expected output structure for this synchronous script
+  message: "string"
+  status: "string"
