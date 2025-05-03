@@ -291,7 +291,7 @@ class ShutdownAPI(Resource):
             # Use '-h' for halt/power off, adjust if needed (e.g., '-r' for reboot)
             # Add 'sudo' if the backend doesn't run as root and needs privileges
             # result = execute_command('sudo shutdown -h now', timeout=10) 
-            result = execute_command('shutdown -h now', timeout=10) # Assuming backend runs with sufficient privileges
+            result = execute_command('sudo systemctl poweroff', timeout=10) # Assuming backend runs with sufficient privileges
             if result.get('success', False):
                 return {"message": "Shutdown command initiated successfully."}
             else:
@@ -312,7 +312,7 @@ class RebootAPI(Resource):
             logger.warning("Received request to REBOOT the system.")
             # Add 'sudo' if the backend doesn't run as root and needs privileges
             # result = execute_command('sudo reboot', timeout=10)
-            result = execute_command('reboot', timeout=10) # Assuming backend runs with sufficient privileges
+            result = execute_command('sudo systemctl reboot', timeout=10) # Assuming backend runs with sufficient privileges
             if result.get('success', False):
                 return {"message": "Reboot command initiated successfully."}
             else:
