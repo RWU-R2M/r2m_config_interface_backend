@@ -11,6 +11,7 @@ import threading
 import time
 from pathlib import Path
 import jsonschema # Import jsonschema for validation
+import shlex
 
 logger = logging.getLogger(__name__)
 
@@ -132,20 +133,12 @@ def execute_command(command_str, timeout=30):
     global terminal_cwd # Need to modify the global variable
 
     try:
-        # SECURITY WARNING: This is for demonstration purposes only
-        # In a production environment, you should whitelist allowed commands
-        # or use a more secure approach
-        
-        # Split the command string into arguments
-        command_parts = command_str.split()
-        if not command_parts:
-            return {"command": command_str, "error": "Empty command", "success": False}
-
-        # --- Handle 'cd' command internally --- 
-        if command_parts[0] == 'cd':
+        # Handle special case for 'cd' command
+        if command_str.strip().startswith('cd ') or command_str.strip() == 'cd':
+            # Split the command string into arguments
+            command_parts = command_str.split()
             if len(command_parts) == 1:
                 # 'cd' without arguments - typically goes to home, but let's just stay
-                # Or maybe go to the initial CWD? For simplicity, stay.
                 target_dir = '.' # Effectively do nothing, or could go to initial CWD
             else:
                 target_dir = command_parts[1]
@@ -185,19 +178,36 @@ def execute_command(command_str, timeout=30):
                     "stderr": error_msg,
                     "success": False
                 }
-        # --- End of 'cd' handling ---
-
-        # For other commands, execute in a subprocess using the stored CWD
-        logger.info(f"Executing command: {' '.join(command_parts)} in CWD: {terminal_cwd}")
         
-        # Execute the command with a timeout and the correct CWD
-        result = subprocess.run(
-            command_parts, # Use the split parts
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-            cwd=terminal_cwd # Set the current working directory for the subprocess
-        )
+        # For commands with pipes, use shell=True
+        if '|' in command_str or '>' in command_str or '<' in command_str:
+            logger.info(f"Executing shell command with pipes/redirects: {command_str} in CWD: {terminal_cwd}")
+            
+            # Execute the command with shell=True to handle pipes and redirects
+            result = subprocess.run(
+                command_str,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                cwd=terminal_cwd
+            )
+        else:
+            # For simple commands, split and execute without shell=True
+            command_parts = shlex.split(command_str)
+            if not command_parts:
+                return {"command": command_str, "error": "Empty command", "success": False}
+                
+            logger.info(f"Executing command: {' '.join(command_parts)} in CWD: {terminal_cwd}")
+            
+            # Execute the command with a timeout and the correct CWD
+            result = subprocess.run(
+                command_parts,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                cwd=terminal_cwd
+            )
         
         # Log the results
         logger.info(f"Command '{command_str}' finished with return code: {result.returncode}")
